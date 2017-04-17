@@ -196,23 +196,27 @@ int blocklevel_erase(struct blocklevel_device *bl, uint64_t pos, uint64_t len)
 		errno = EINVAL;
 		return FLASH_ERR_PARM_ERROR;
 	}
+    printf("%s %d pos=%llu, len=%llu \r\n",__FUNCTION__,__LINE__,pos,len);
 
 	/* Programmer may be making a horrible mistake without knowing it */
 	if (pos & bl->erase_mask) {
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);        
 		fprintf(stderr, "blocklevel_erase: pos (0x%"PRIx64") is not erase block (0x%08x) aligned\n",
 				pos, bl->erase_mask + 1);
 	}
 
 	if (len & bl->erase_mask) {
+             printf("%s %d \r\n",__FUNCTION__,__LINE__);      
 		fprintf(stderr, "blocklevel_erase: len (0x%"PRIx64") is not erase block (0x%08x) aligned\n",
 				len, bl->erase_mask + 1);
 		return FLASH_ERR_ERASE_BOUNDARY;
 	}
 
 	rc = reacquire(bl);
-	if (rc)
+	if (rc){
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);           
 		return rc;
-
+    }
 	rc = bl->erase(bl, pos, len);
 
 	release(bl);
@@ -226,21 +230,25 @@ int blocklevel_get_info(struct blocklevel_device *bl, const char **name, uint64_
 	int rc;
 
 	if (!bl || !bl->get_info) {
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);           
 		errno = EINVAL;
 		return FLASH_ERR_PARM_ERROR;
 	}
 
 	rc = reacquire(bl);
-	if (rc)
+	if (rc){
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);           
 		return rc;
-
+    }
 	rc = bl->get_info(bl, name, total_size, erase_granule);
 
 	/* Check the validity of what we are being told */
-	if (erase_granule && *erase_granule != bl->erase_mask + 1)
+	if (erase_granule && *erase_granule != bl->erase_mask + 1){
+                printf("%s %d \r\n",__FUNCTION__,__LINE__);   
 		fprintf(stderr, "blocklevel_get_info: WARNING: erase_granule (0x%08x) and erase_mask"
 				" (0x%08x) don't match\n", *erase_granule, bl->erase_mask + 1);
-
+    }
+    printf("%s %d \r\n",__FUNCTION__,__LINE__);       
 	release(bl);
 
 	return rc;
@@ -285,20 +293,24 @@ int blocklevel_smart_erase(struct blocklevel_device *bl, uint64_t pos, uint64_t 
 		errno = EINVAL;
 		return FLASH_ERR_PARM_ERROR;
 	}
-
+    printf("%s %d pos=%llu, len=%llu \r\n",__FUNCTION__,__LINE__,pos,len);
 	/* Nothing smart needs to be done, pos and len are aligned */
-	if ((pos & bl->erase_mask) == 0 && (len & bl->erase_mask) == 0)
+	if ((pos & bl->erase_mask) == 0 && (len & bl->erase_mask) == 0){
+        printf("%s %d go to old  blocklevel_erase \r\n",__FUNCTION__,__LINE__);
 		return blocklevel_erase(bl, pos, len);
-
+    }
 	block_size = bl->erase_mask + 1;
+    printf("%s %d block_size= %llu \r\n",__FUNCTION__,__LINE__,block_size);
 	erase_buf = malloc(block_size);
 	if (!erase_buf) {
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);        
 		errno = ENOMEM;
 		return FLASH_ERR_MALLOC_FAILED;
 	}
 
 	rc = reacquire(bl);
 	if (rc) {
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);        
 		free(erase_buf);
 		return rc;
 	}
@@ -316,16 +328,21 @@ int blocklevel_smart_erase(struct blocklevel_device *bl, uint64_t pos, uint64_t 
 		 * modifying, we may need the end chunk of it later
 		 */
 		rc = bl->read(bl, base_pos, erase_buf, block_size);
-		if (rc)
+		if (rc){
+            printf("%s %d \r\n",__FUNCTION__,__LINE__);            
 			goto out;
-
+        }
 		rc = bl->erase(bl, base_pos, block_size);
-		if (rc)
+		if (rc){
+            printf("%s %d \r\n",__FUNCTION__,__LINE__);            
 			goto out;
+        }
 
 		rc = bl->write(bl, base_pos, erase_buf, base_len);
-		if (rc)
+		if (rc){
+            printf("%s %d \r\n",__FUNCTION__,__LINE__);            
 			goto out;
+        }
 
 		/*
 		 * The requested erase fits entirely into this erase block and

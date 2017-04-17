@@ -203,21 +203,21 @@ static struct blocklevel_device *flash_setup(enum flash_access access)
 	rc = open_devs(access);
 	if (rc)
 		return NULL;
-
+    printf("%s %d \r\n",__FUNCTION__,__LINE__);   
 	/* Create the AST flash controller */
 	rc = ast_sf_open(access == BMC_DIRECT ? AST_SF_TYPE_BMC : AST_SF_TYPE_PNOR, &fl);
 	if (rc) {
 		fprintf(stderr, "Failed to open controller\n");
 		return NULL;
 	}
-
+    printf("%s %d \r\n",__FUNCTION__,__LINE__);   
 	/* Open flash chip */
 	rc = flash_init(fl, &bl, &arch_data.flash_chip);
 	if (rc) {
 		fprintf(stderr, "Failed to open flash chip\n");
 		return NULL;
 	}
-
+    printf("%s %d \r\n",__FUNCTION__,__LINE__);   
 	return bl;
 }
 
@@ -297,21 +297,25 @@ enum flash_access arch_flash_access(struct blocklevel_device *bl,
 int arch_flash_erase_chip(struct blocklevel_device *bl)
 {
 	/* Called with a BL not inited here, bail */
-	if (!arch_data.init_bl || arch_data.init_bl != bl)
+	if (!arch_data.init_bl || arch_data.init_bl != bl){
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);        
 		return -1;
-
+    }
 	if (!arch_data.flash_chip) {
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);            
 		/* Just assume its a regular erase */
 		int rc;
 		uint64_t total_size;
 
 		rc = blocklevel_get_info(bl, NULL, &total_size, NULL);
-		if (rc)
+		if (rc){
+            printf("%s %d \r\n",__FUNCTION__,__LINE__);                
 			return rc;
-
+        }
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);            
 		return blocklevel_erase(bl, 0, total_size);
 	}
-
+    printf("%s %d \r\n",__FUNCTION__,__LINE__);    
 	return flash_erase_chip(arch_data.flash_chip);
 }
 
@@ -348,12 +352,14 @@ int arch_flash_init(struct blocklevel_device **r_bl, const char *file, bool keep
 	int rc = 0;
 
 	/* Check we haven't already inited */
-	if (arch_data.init_bl)
+	if (arch_data.init_bl){
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);           
 		return -1;
-
+    }
 	if (file) {
 		rc = file_init_path(file, NULL, keep_alive, &new_bl);
 	} else if (arch_data.access == BMC_MTD || arch_data.access == PNOR_MTD) {
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);   	
 		char *mtd_dev;
 
 		mtd_dev = get_dev_mtd(arch_data.access);
@@ -362,7 +368,9 @@ int arch_flash_init(struct blocklevel_device **r_bl, const char *file, bool keep
 		}
 		rc = file_init_path(mtd_dev, NULL, keep_alive, &new_bl);
 		free(mtd_dev);
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);           
 	} else {
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);   	
 		new_bl = flash_setup(arch_data.access);
 		if (!new_bl)
 			rc = -1;
@@ -372,6 +380,7 @@ int arch_flash_init(struct blocklevel_device **r_bl, const char *file, bool keep
 
 	arch_data.init_bl = new_bl;
 	*r_bl = new_bl;
+    printf("%s %d \r\n",__FUNCTION__,__LINE__);       
 	return 0;
 }
 

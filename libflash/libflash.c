@@ -33,7 +33,7 @@ static const struct flash_info flash_info[] = {
 	{ 0xc2201a, 0x04000000, FL_ERASE_ALL | FL_CAN_4B, "Macronix MXxxL51235F"},
 	{ 0xc2201b, 0x08000000, FL_ERASE_ALL | FL_CAN_4B, "Macronix MX66L1G45G"},
 	{ 0xef4018, 0x01000000, FL_ERASE_ALL,             "Winbond W25Q128BV"   },
-	{ 0xef4019, 0x02000000, FL_ERASE_ALL | FL_ERASE_64K | FL_CAN_4B |
+	{ 0xef4019, 0x02000000, FL_ERASE_4K | FL_ERASE_64K | FL_CAN_4B |
 				FL_ERASE_BULK,
 							"Winbond W25Q256BV"},
 	{ 0x20ba20, 0x04000000, FL_ERASE_4K  | FL_ERASE_64K | FL_CAN_4B |
@@ -283,24 +283,32 @@ int flash_erase_chip(struct flash_chip *c)
 {
 	struct spi_flash_ctrl *ct = c->ctrl;
 	int rc;
+    printf("%s %d c->info.flags =%x \r\n",__FUNCTION__,__LINE__,c->info.flags);   
 
 	/* XXX TODO: Fallback to using normal erases */
-	if (!(c->info.flags & (FL_ERASE_CHIP|FL_ERASE_BULK)))
+	if (!(c->info.flags & (FL_ERASE_CHIP|FL_ERASE_BULK))){
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);           
 		return FLASH_ERR_CHIP_ER_NOT_SUPPORTED;
-
+    }
 	FL_DBG("LIBFLASH: Erasing chip...\n");
 	
 	/* Use controller erase if supported */
-	if (ct->erase)
+	if (ct->erase){
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);        
 		return ct->erase(ct, 0, 0xffffffff);
-
+    }
 	rc = fl_wren(ct);
 	if (rc) return rc;
 
-	if (c->info.flags & FL_ERASE_CHIP)
+	if (c->info.flags & FL_ERASE_CHIP){
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);        
 		rc = ct->cmd_wr(ct, CMD_CE, false, 0, NULL, 0);
-	else
-		rc = ct->cmd_wr(ct, CMD_MIC_BULK_ERASE, false, 0, NULL, 0);
+    }
+	else{
+        printf("%s %d \r\n",__FUNCTION__,__LINE__);        
+//		rc = ct->cmd_wr(ct, CMD_MIC_BULK_ERASE, false, 0, NULL, 0);
+		rc = ct->cmd_wr(ct, CMD_BE, false, 0, NULL, 0);        
+    }
 	if (rc)
 		return rc;
 
